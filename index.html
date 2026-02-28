@@ -38,13 +38,97 @@ body::before {
   pointer-events:none; z-index:1000; opacity:0.5;
 }
 
+/* ─── PROFILS ─── */
+#profile-bar {
+  background: rgba(8,8,14,0.98);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 200;
+}
+.profile-label {
+  font-size:.55rem; letter-spacing:.3em; color:var(--violet-moyen);
+  text-transform:uppercase; flex-shrink:0;
+}
+#profile-select {
+  font-family:'Josefin Sans',sans-serif; font-size:.65rem;
+  background:rgba(0,0,0,0.4); border:1px solid var(--border);
+  color:var(--blanc); padding:.35rem .8rem; cursor:pointer;
+  flex:1; min-width:150px; max-width:250px; outline:none;
+}
+#profile-select:focus { border-color:var(--violet-moyen); }
+#profile-select option { background:#1a1a2e; }
+.profile-btn {
+  font-family:'Josefin Sans',sans-serif;
+  font-size:.55rem; letter-spacing:.2em; text-transform:uppercase;
+  padding:.35rem .8rem; border:1px solid var(--border);
+  background:transparent; color:rgba(201,184,232,0.6);
+  cursor:pointer; transition:all .2s; flex-shrink:0;
+}
+.profile-btn:hover { border-color:var(--violet-moyen); color:var(--violet-pastel); background:rgba(124,77,190,0.1); }
+.profile-btn.danger { border-color:rgba(192,70,74,0.3); color:#e88; }
+.profile-btn.danger:hover { background:rgba(192,70,74,0.1); }
+.profile-active-name {
+  font-family:'Cinzel Decorative',serif;
+  font-size:.75rem; color:var(--violet-pastel);
+  margin-left:auto; flex-shrink:0;
+}
+.profile-active-tag {
+  font-size:.55rem; letter-spacing:.2em; color:var(--or);
+  text-transform:uppercase; flex-shrink:0;
+}
+
+/* ─── MODAL PROFIL ─── */
+#profile-modal {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.85); z-index:9998;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(6px);
+}
+#profile-modal.show { display:flex; }
+.modal-box {
+  background:var(--noir-doux); border:1px solid var(--border);
+  padding:2.5rem; max-width:480px; width:90%;
+  position:relative; animation:fadeUp .3s ease;
+}
+.modal-box::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--violet-fonce),var(--or),var(--violet-moyen));
+}
+.modal-title {
+  font-family:'Cinzel Decorative',serif; font-size:1.1rem;
+  color:var(--blanc); margin-bottom:1.5rem;
+}
+.modal-label {
+  display:block; font-size:.58rem; letter-spacing:.3em;
+  color:var(--violet-pastel); text-transform:uppercase; margin-bottom:.4rem;
+}
+.modal-input, .modal-select {
+  width:100%; padding:.6rem 1rem;
+  background:rgba(0,0,0,0.4); border:1px solid var(--border);
+  color:var(--blanc); font-family:'Josefin Sans',sans-serif; font-size:.72rem;
+  outline:none; margin-bottom:1rem; transition:border-color .2s;
+}
+.modal-input:focus, .modal-select:focus { border-color:var(--violet-moyen); }
+.modal-select option { background:#1a1a2e; }
+.modal-actions { display:flex; gap:.5rem; margin-top:.5rem; }
+.modal-btn {
+  flex:1; font-family:'Josefin Sans',sans-serif;
+  font-size:.6rem; letter-spacing:.25em; text-transform:uppercase;
+  padding:.6rem; border:1px solid var(--violet-moyen);
+  background:rgba(124,77,190,0.15); color:var(--violet-pastel);
+  cursor:pointer; transition:all .2s;
+}
+.modal-btn:hover { background:rgba(124,77,190,0.35); }
+.modal-btn.cancel { border-color:var(--border); background:transparent; color:rgba(240,236,255,0.4); }
+.modal-btn.cancel:hover { color:var(--blanc); }
+
 /* ─── HEADER ─── */
 header {
   text-align:center;
-  padding: 4rem 2rem 2rem;
+  padding: 2.5rem 2rem 1.5rem;
   background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,77,190,0.2) 0%, transparent 70%);
   border-bottom: 1px solid var(--border);
-  position: sticky; top:0; z-index:100;
   backdrop-filter: blur(20px);
   background-color: rgba(8,8,14,0.92);
 }
@@ -109,6 +193,14 @@ nav {
 .util-btn:hover { background:rgba(200,169,110,0.15); border-color:var(--or); }
 .util-btn.danger { border-color:rgba(192,70,74,0.4); color:#e88; background:rgba(192,70,74,0.05); }
 .util-btn.danger:hover { background:rgba(192,70,74,0.15); }
+
+/* ─── COLOR PICKER ─── */
+.color-opt {
+  width:28px; height:28px; border-radius:50%; cursor:pointer;
+  border:2px solid transparent; transition:all .2s;
+}
+.color-opt:hover { transform:scale(1.15); }
+.color-opt.selected { border-color:#fff; transform:scale(1.2); }
 
 /* ─── MAIN ─── */
 main { max-width:1400px; margin:0 auto; padding:2rem; }
@@ -241,6 +333,66 @@ main { max-width:1400px; margin:0 auto; padding:2rem; }
 </style>
 </head>
 <body>
+
+<!-- ═══ BARRE DE PROFILS ═══ -->
+<div id="profile-bar">
+  <span class="profile-label">Sim active :</span>
+  <select id="profile-select" onchange="switchProfile(this.value)"></select>
+  <button class="profile-btn" onclick="openModal('new')">+ Nouvelle Sim</button>
+  <button class="profile-btn" onclick="openModal('edit')">✏️ Modifier</button>
+  <button class="profile-btn danger" onclick="deleteProfile()">🗑️ Supprimer</button>
+  <span class="profile-active-tag" id="profile-gameplay-tag"></span>
+  <span class="profile-active-name" id="profile-active-display"></span>
+</div>
+
+<!-- ═══ MODAL NOUVEAU PROFIL ═══ -->
+<div id="profile-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">✨ Nouvelle Sim</div>
+
+    <label class="modal-label">Nom de ta Sim</label>
+    <input class="modal-input" id="modal-sim-name" type="text" placeholder="Ex : Selene, Aurora, Marcus...">
+
+    <label class="modal-label">Type de Gameplay</label>
+    <select class="modal-select" id="modal-gameplay">
+      <option value="Super Sim">🏆 Super Sim — Tout compléter</option>
+      <option value="Legacy">👨‍👩‍👧 Legacy — Plusieurs générations</option>
+      <option value="100 Bébés">🍼 Challenge 100 Bébés</option>
+      <option value="Occultiste">🌙 Occultiste — Explorer les pouvoirs</option>
+      <option value="Carrière">💼 Focus Carrière</option>
+      <option value="Construction">🏠 Builder — Focus Construction</option>
+      <option value="Richesse">💰 From Zero to Hero</option>
+      <option value="Vampire">🧛 Vampire Only</option>
+      <option value="Sorcier">🧙 Sorcier Only</option>
+      <option value="Garou">🐺 Garou Only</option>
+      <option value="Famille">👨‍👩‍👧 Vie de Famille</option>
+      <option value="Romantique">❤️ Romantica / Soulmate</option>
+      <option value="Freelance">🎨 Freelance & Arts</option>
+      <option value="Exploration">🌍 Exploration & Voyages</option>
+      <option value="Personnalisé">✍️ Personnalisé</option>
+    </select>
+
+    <label class="modal-label">Notes / Commentaire libre</label>
+    <input class="modal-input" id="modal-notes" type="text" placeholder="Ex : Save principale, monde Sulani, aime la pêche...">
+
+    <label class="modal-label">Couleur du profil</label>
+    <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem;" id="color-picker">
+      <div class="color-opt" data-color="#9b7fcb" style="background:#9b7fcb;" title="Violet"></div>
+      <div class="color-opt" data-color="#c8a96e" style="background:#c8a96e;" title="Or"></div>
+      <div class="color-opt" data-color="#5a9a56" style="background:#5a9a56;" title="Vert"></div>
+      <div class="color-opt" data-color="#c0464a" style="background:#c0464a;" title="Rouge"></div>
+      <div class="color-opt" data-color="#4a8ab0" style="background:#4a8ab0;" title="Bleu"></div>
+      <div class="color-opt" data-color="#e87878" style="background:#e87878;" title="Rose"></div>
+      <div class="color-opt" data-color="#78c8c8" style="background:#78c8c8;" title="Cyan"></div>
+      <div class="color-opt" data-color="#c8784a" style="background:#c8784a;" title="Orange"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal()">Annuler</button>
+      <button class="modal-btn" onclick="saveProfile()">Créer la Sim →</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <p class="header-sub">Sims 4 — Tracker Officiel</p>
@@ -434,6 +586,165 @@ main { max-width:1400px; margin:0 auto; padding:2rem; }
 <div id="toast">✓ Sauvegardé</div>
 
 <script>
+// ═══════════════════════════════
+// SYSTÈME DE PROFILS
+// ═══════════════════════════════
+
+let currentProfileId = null;
+let selectedColor = '#9b7fcb';
+let editMode = false;
+
+function getProfiles() {
+  return JSON.parse(localStorage.getItem('sims4_profiles') || '{}');
+}
+function saveProfiles(profiles) {
+  localStorage.setItem('sims4_profiles', JSON.stringify(profiles));
+}
+
+function initProfiles() {
+  const profiles = getProfiles();
+  // Si aucun profil, créer un profil par défaut
+  if (Object.keys(profiles).length === 0) {
+    const defaultId = 'sim_' + Date.now();
+    profiles[defaultId] = {
+      id: defaultId, name: 'Ma Sim', gameplay: 'Super Sim',
+      notes: '', color: '#9b7fcb', createdAt: Date.now()
+    };
+    saveProfiles(profiles);
+  }
+  // Charger le dernier profil actif
+  currentProfileId = localStorage.getItem('sims4_active_profile') || Object.keys(profiles)[0];
+  if (!profiles[currentProfileId]) currentProfileId = Object.keys(profiles)[0];
+  renderProfileSelect();
+  updateProfileDisplay();
+}
+
+function renderProfileSelect() {
+  const profiles = getProfiles();
+  const sel = document.getElementById('profile-select');
+  sel.innerHTML = '';
+  Object.values(profiles).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} — ${p.gameplay}`;
+    opt.selected = p.id === currentProfileId;
+    sel.appendChild(opt);
+  });
+}
+
+function updateProfileDisplay() {
+  const profiles = getProfiles();
+  const p = profiles[currentProfileId];
+  if (!p) return;
+  document.getElementById('profile-active-display').textContent = p.name;
+  document.getElementById('profile-active-display').style.color = p.color;
+  document.getElementById('profile-gameplay-tag').textContent = p.gameplay;
+  if (p.notes) {
+    document.getElementById('profile-gameplay-tag').title = p.notes;
+  }
+}
+
+function switchProfile(id) {
+  currentProfileId = id;
+  localStorage.setItem('sims4_active_profile', id);
+  updateProfileDisplay();
+  loadData();
+  renderAll();
+}
+
+function openModal(mode) {
+  editMode = mode === 'edit';
+  const profiles = getProfiles();
+  const p = profiles[currentProfileId];
+  
+  document.getElementById('modal-title').textContent = editMode ? '✏️ Modifier la Sim' : '✨ Nouvelle Sim';
+  document.querySelector('.modal-btn:last-child').textContent = editMode ? 'Enregistrer →' : 'Créer la Sim →';
+  
+  if (editMode && p) {
+    document.getElementById('modal-sim-name').value = p.name;
+    document.getElementById('modal-gameplay').value = p.gameplay;
+    document.getElementById('modal-notes').value = p.notes || '';
+    selectedColor = p.color;
+  } else {
+    document.getElementById('modal-sim-name').value = '';
+    document.getElementById('modal-gameplay').value = 'Super Sim';
+    document.getElementById('modal-notes').value = '';
+    selectedColor = '#9b7fcb';
+  }
+  
+  // Color picker
+  document.querySelectorAll('.color-opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.color === selectedColor);
+    el.onclick = () => {
+      selectedColor = el.dataset.color;
+      document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+    };
+  });
+
+  document.getElementById('profile-modal').classList.add('show');
+  document.getElementById('modal-sim-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('profile-modal').classList.remove('show');
+}
+
+function saveProfile() {
+  const name = document.getElementById('modal-sim-name').value.trim();
+  if (!name) { document.getElementById('modal-sim-name').style.borderColor='#e88'; return; }
+  
+  const profiles = getProfiles();
+  if (editMode) {
+    profiles[currentProfileId].name = name;
+    profiles[currentProfileId].gameplay = document.getElementById('modal-gameplay').value;
+    profiles[currentProfileId].notes = document.getElementById('modal-notes').value.trim();
+    profiles[currentProfileId].color = selectedColor;
+  } else {
+    const newId = 'sim_' + Date.now();
+    profiles[newId] = {
+      id: newId, name, 
+      gameplay: document.getElementById('modal-gameplay').value,
+      notes: document.getElementById('modal-notes').value.trim(),
+      color: selectedColor, createdAt: Date.now()
+    };
+    currentProfileId = newId;
+    localStorage.setItem('sims4_active_profile', newId);
+  }
+  saveProfiles(profiles);
+  renderProfileSelect();
+  updateProfileDisplay();
+  closeModal();
+  showToast(editMode ? '✓ Profil modifié !' : '✓ Nouvelle Sim créée !');
+  if (!editMode) { loadData(); renderAll(); }
+}
+
+function deleteProfile() {
+  const profiles = getProfiles();
+  if (Object.keys(profiles).length <= 1) {
+    showToast('⚠ Impossible de supprimer le seul profil');
+    return;
+  }
+  const p = profiles[currentProfileId];
+  if (!confirm(`Supprimer "${p.name}" et toute sa progression ? Cette action est irréversible.`)) return;
+  
+  // Supprimer les données de cette sim
+  localStorage.removeItem('sims4_tracker_v2_' + currentProfileId);
+  delete profiles[currentProfileId];
+  saveProfiles(profiles);
+  currentProfileId = Object.keys(profiles)[0];
+  localStorage.setItem('sims4_active_profile', currentProfileId);
+  renderProfileSelect();
+  updateProfileDisplay();
+  loadData(); renderAll();
+  showToast('Profil supprimé');
+}
+
+// Fermer modal en cliquant dehors
+document.getElementById('profile-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
 // ═══ DONNÉES ═══
 
 const DATA = {
@@ -991,21 +1302,25 @@ let state = {};
 
 function loadData() {
   try {
-    const saved = localStorage.getItem('sims4_tracker_v2');
-    if (saved) state = JSON.parse(saved);
+    const key = 'sims4_tracker_v2_' + (currentProfileId || 'default');
+    const saved = localStorage.getItem(key);
+    state = saved ? JSON.parse(saved) : {};
   } catch(e) { state = {}; }
 }
 
 function saveData() {
-  localStorage.setItem('sims4_tracker_v2', JSON.stringify(state));
+  const key = 'sims4_tracker_v2_' + (currentProfileId || 'default');
+  localStorage.setItem(key, JSON.stringify(state));
   showToast('✓ Sauvegardé !');
 }
 
 function exportData() {
+  const profiles = getProfiles();
+  const p = profiles[currentProfileId];
   const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'sims4_progression.json';
+  a.download = `sims4_${p ? p.name.replace(/\s/g,'_') : 'progression'}.json`;
   a.click();
 }
 
@@ -1208,9 +1523,13 @@ function showToast(msg) {
 }
 
 // ═══ AUTO-SAVE ═══
-setInterval(saveData, 30000);
+setInterval(() => {
+  const key = 'sims4_tracker_v2_' + (currentProfileId || 'default');
+  localStorage.setItem(key, JSON.stringify(state));
+}, 30000);
 
 // ═══ INIT ═══
+initProfiles();
 loadData();
 renderAll();
 </script>
