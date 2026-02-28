@@ -1318,7 +1318,13 @@ function saveData() {
 function exportData() {
   const profiles = getProfiles();
   const p = profiles[currentProfileId];
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  // On exporte le profil ET la progression ensemble
+  const exportObj = {
+    profile: p,
+    progression: state,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `sims4_${p ? p.name.replace(/\s/g,'_') : 'progression'}.json`;
@@ -1332,10 +1338,37 @@ function importData() {
     const reader = new FileReader();
     reader.onload = ev => {
       try {
-        state = JSON.parse(ev.target.result);
-        saveData();
-        renderAll();
-        showToast('✓ Importé !');
+        const parsed = JSON.parse(ev.target.result);
+
+        // Nouveau format : contient profil + progression
+        if (parsed.profile && parsed.progression) {
+          const profiles = getProfiles();
+          const importedProfile = parsed.profile;
+
+          // Vérifier si un profil avec cet ID existe déjà
+          if (!profiles[importedProfile.id]) {
+            // Recréer le profil
+            profiles[importedProfile.id] = importedProfile;
+            saveProfiles(profiles);
+          }
+
+          // Charger ce profil comme actif
+          currentProfileId = importedProfile.id;
+          localStorage.setItem('sims4_active_profile', currentProfileId);
+          state = parsed.progression;
+          saveData();
+          renderProfileSelect();
+          updateProfileDisplay();
+          renderAll();
+          showToast(`✓ "${importedProfile.name}" importé !`);
+
+        } else {
+          // Ancien format (progression seule) — on l'importe dans le profil actif
+          state = parsed;
+          saveData();
+          renderAll();
+          showToast('✓ Progression importée !');
+        }
       } catch(e) { showToast('⚠ Fichier invalide'); }
     };
     reader.readAsText(e.target.files[0]);
