@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sims 4 — Tracker de Progression FR</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Josefin+Sans:wght@100;300;400&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --noir: #08080e;
+  --noir-doux: #0f0f1a;
+  --violet-pastel: #c9b8e8;
+  --violet-moyen: #9b7fcb;
+  --violet-fonce: #4a2d7a;
+  --violet-glow: #7c4dbe;
+  --blanc: #f0ecff;
+  --gris-verre: rgba(180,160,220,0.06);
+  --or: #c8a96e;
+  --vert: #5a9a56;
+  --rouge: #c0464a;
+  --border: rgba(201,184,232,0.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--noir);
+  color: var(--blanc);
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+}
+
+/* Grain */
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:1000; opacity:0.5;
+}
+
+/* ─── HEADER ─── */
+header {
+  text-align:center;
+  padding: 4rem 2rem 2rem;
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,77,190,0.2) 0%, transparent 70%);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top:0; z-index:100;
+  backdrop-filter: blur(20px);
+  background-color: rgba(8,8,14,0.92);
+}
+header h1 {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.5rem,5vw,3rem);
+  background: linear-gradient(135deg, #fff 0%, var(--violet-pastel) 50%, var(--violet-moyen) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:.5rem;
+}
+.header-sub { font-size:.65rem; letter-spacing:.4em; color:var(--violet-moyen); text-transform:uppercase; }
+
+/* ─── PROGRESS BAR ─── */
+.global-progress {
+  max-width:600px; margin:1.5rem auto .5rem;
+}
+.progress-label {
+  display:flex; justify-content:space-between;
+  font-size:.6rem; letter-spacing:.3em; color:var(--violet-pastel); text-transform:uppercase; margin-bottom:.5rem;
+}
+.progress-bar {
+  height:3px; background:rgba(201,184,232,0.1);
+  position:relative;
+}
+.progress-fill {
+  height:100%; background:linear-gradient(90deg,var(--violet-fonce),var(--violet-moyen));
+  transition: width .5s ease;
+  box-shadow: 0 0 10px rgba(124,77,190,0.5);
+}
+
+/* ─── NAV ─── */
+nav {
+  display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center;
+  padding:1rem 2rem; border-bottom:1px solid var(--border);
+  background: rgba(8,8,14,0.95);
+  position: sticky; top: 0; z-index: 99;
+}
+.nav-btn {
+  font-family:'Josefin Sans',sans-serif;
+  font-size:.58rem; letter-spacing:.3em; text-transform:uppercase;
+  padding:.4rem 1rem; border:1px solid var(--border);
+  background:transparent; color:rgba(201,184,232,0.6);
+  cursor:pointer; transition:all .2s;
+}
+.nav-btn:hover, .nav-btn.active {
+  border-color:var(--violet-moyen); color:var(--violet-pastel);
+  background: rgba(124,77,190,0.1);
+}
+
+/* ─── BOUTONS UTILITAIRES ─── */
+.util-bar {
+  display:flex; gap:.8rem; flex-wrap:wrap; justify-content:center;
+  padding:1rem 2rem;
+  border-bottom:1px solid var(--border);
+}
+.util-btn {
+  font-size:.58rem; letter-spacing:.25em; text-transform:uppercase;
+  padding:.35rem .9rem; border:1px solid rgba(200,169,110,0.3);
+  background:rgba(200,169,110,0.05); color:var(--or);
+  cursor:pointer; transition:all .2s; font-family:'Josefin Sans',sans-serif;
+}
+.util-btn:hover { background:rgba(200,169,110,0.15); border-color:var(--or); }
+.util-btn.danger { border-color:rgba(192,70,74,0.4); color:#e88; background:rgba(192,70,74,0.05); }
+.util-btn.danger:hover { background:rgba(192,70,74,0.15); }
+
+/* ─── MAIN ─── */
+main { max-width:1400px; margin:0 auto; padding:2rem; }
+
+/* ─── SECTION ─── */
+.tracker-section { margin-bottom:4rem; display:none; }
+.tracker-section.active { display:block; }
+.section-header {
+  display:flex; align-items:baseline; gap:1.5rem;
+  margin-bottom:2rem; padding-bottom:1rem;
+  border-bottom:1px solid var(--border);
+}
+.section-title {
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(1.2rem,3vw,1.8rem); color:var(--blanc);
+}
+.section-count {
+  font-size:.6rem; letter-spacing:.3em; color:var(--violet-moyen); text-transform:uppercase;
+}
+.section-prog { margin-left:auto; }
+.section-prog-bar {
+  width:120px; height:2px; background:rgba(201,184,232,0.1);
+}
+.section-prog-fill {
+  height:100%; background:linear-gradient(90deg,var(--violet-fonce),var(--violet-moyen));
+  transition:width .4s ease;
+}
+
+/* ─── GRILLE D'ITEMS ─── */
+.items-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+  gap:.75rem;
+}
+.items-grid.compact { grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); }
+
+/* ─── ITEM CHECKBOX ─── */
+.item-check {
+  display:flex; align-items:center; gap:.75rem;
+  padding:.85rem 1rem;
+  border:1px solid var(--border);
+  background:var(--gris-verre);
+  cursor:pointer; transition:all .25s;
+  position:relative; overflow:hidden;
+  user-select:none;
+}
+.item-check:hover { border-color:rgba(201,184,232,0.25); background:rgba(124,77,190,0.08); }
+.item-check.done {
+  border-color:rgba(90,154,86,0.4);
+  background:rgba(90,154,86,0.08);
+}
+.item-check.done .item-name { color:rgba(90,154,86,0.9); text-decoration:line-through; text-decoration-color:rgba(90,154,86,0.4); }
+.item-check::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
+  background: linear-gradient(180deg,var(--violet-fonce),var(--violet-moyen));
+  opacity:0; transition:opacity .25s;
+}
+.item-check.done::before { background:linear-gradient(180deg,#3d7a39,#5a9a56); opacity:1; }
+.item-check:hover::before { opacity:1; }
+
+.checkbox {
+  width:18px; height:18px; flex-shrink:0;
+  border:1px solid rgba(201,184,232,0.3);
+  background:transparent;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.7rem; transition:all .2s;
+}
+.item-check.done .checkbox {
+  background:rgba(90,154,86,0.3); border-color:rgba(90,154,86,0.6); color:#7dbd79;
+}
+
+.item-info { flex:1; min-width:0; }
+.item-name { font-size:.7rem; letter-spacing:.05em; color:var(--blanc); line-height:1.4; }
+.item-pack { font-size:.55rem; letter-spacing:.2em; color:var(--violet-moyen); text-transform:uppercase; margin-top:.15rem; }
+
+/* ─── ITEM SKILL (slider niveau) ─── */
+.item-skill {
+  padding:.85rem 1rem 1rem;
+  border:1px solid var(--border);
+  background:var(--gris-verre);
+  transition:all .25s; position:relative;
+}
+.item-skill.maxed { border-color:rgba(90,154,86,0.4); background:rgba(90,154,86,0.06); }
+.item-skill.maxed .item-name { color:rgba(90,154,86,0.9); }
+.skill-top { display:flex; align-items:center; gap:.75rem; margin-bottom:.7rem; }
+.skill-level {
+  font-family:'Cinzel Decorative',serif;
+  font-size:1.1rem; color:var(--violet-moyen); min-width:2rem;
+  transition:color .2s;
+}
+.item-skill.maxed .skill-level { color:#5a9a56; }
+.skill-bar {
+  display:flex; gap:3px; margin-top:.5rem;
+}
+.skill-pip {
+  flex:1; height:4px; background:rgba(201,184,232,0.1);
+  cursor:pointer; transition:background .15s;
+  border-radius:2px;
+}
+.skill-pip.filled { background:var(--violet-moyen); }
+.item-skill.maxed .skill-pip.filled { background:#5a9a56; }
+.skill-pip:hover { background:var(--violet-pastel) !important; }
+
+/* ─── SUBSECTION ─── */
+.subsection { margin-bottom:2.5rem; }
+.subsection-title {
+  font-size:.62rem; letter-spacing:.4em; color:var(--or);
+  text-transform:uppercase; margin-bottom:1rem;
+  padding-bottom:.5rem; border-bottom:1px solid rgba(200,169,110,0.15);
+  display:flex; align-items:center; gap:.7rem;
+}
+
+/* ─── TOAST ─── */
+#toast {
+  position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(100px);
+  background:rgba(74,45,122,0.95); border:1px solid var(--violet-moyen);
+  color:var(--violet-pastel); padding:.6rem 1.5rem;
+  font-size:.65rem; letter-spacing:.2em; text-transform:uppercase;
+  transition:transform .3s ease; z-index:9999; backdrop-filter:blur(10px);
+  pointer-events:none;
+}
+#toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:600px) {
+  .items-grid { grid-template-columns:1fr; }
+  nav { gap:.3rem; }
+  .nav-btn { font-size:.5rem; padding:.3rem .7rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="header-sub">Sims 4 — Tracker Officiel</p>
+  <h1>Progression de ta Sim</h1>
+  <div class="global-progress">
+    <div class="progress-label">
+      <span>Progression globale</span>
+      <span id="global-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="global-fill" style="width:0%"></div></div>
+  </div>
+</header>
+
+<nav id="main-nav">
+  <button class="nav-btn active" onclick="showSection('aspirations')">✨ Aspirations</button>
+  <button class="nav-btn" onclick="showSection('competences')">📈 Compétences</button>
+  <button class="nav-btn" onclick="showSection('carrieres')">💼 Carrières</button>
+  <button class="nav-btn" onclick="showSection('traits')">🏆 Traits Récompense</button>
+  <button class="nav-btn" onclick="showSection('diplomes')">🎓 Diplômes</button>
+  <button class="nav-btn" onclick="showSection('occultistes')">🌙 Occultistes</button>
+  <button class="nav-btn" onclick="showSection('jalons')">🌟 Jalons de Vie</button>
+  <button class="nav-btn" onclick="showSection('notoriete')">⭐ Notoriété</button>
+</nav>
+
+<div class="util-bar">
+  <button class="util-btn" onclick="saveData()">💾 Sauvegarder</button>
+  <button class="util-btn" onclick="exportData()">📤 Exporter</button>
+  <button class="util-btn" onclick="importData()">📥 Importer</button>
+  <button class="util-btn danger" onclick="resetData()">🗑️ Réinitialiser</button>
+</div>
+
+<main>
+
+<!-- ═══ ASPIRATIONS ═══ -->
+<div class="tracker-section active" id="section-aspirations">
+  <div class="section-header">
+    <div class="section-title">✨ Aspirations</div>
+    <div class="section-count" id="count-aspirations">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-aspirations" style="width:0%"></div></div></div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">🎮 Jeu de base</div>
+    <div class="items-grid" id="asp-base"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">📦 Extensions & Accessoires</div>
+    <div class="items-grid" id="asp-ext"></div>
+  </div>
+</div>
+
+<!-- ═══ COMPÉTENCES ═══ -->
+<div class="tracker-section" id="section-competences">
+  <div class="section-header">
+    <div class="section-title">📈 Compétences</div>
+    <div class="section-count" id="count-competences">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-competences" style="width:0%"></div></div></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🎮 Jeu de base</div>
+    <div class="items-grid" id="skill-base"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">📦 Extensions</div>
+    <div class="items-grid" id="skill-ext"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">👶 Enfants & Bambins</div>
+    <div class="items-grid" id="skill-enfant"></div>
+  </div>
+</div>
+
+<!-- ═══ CARRIÈRES ═══ -->
+<div class="tracker-section" id="section-carrieres">
+  <div class="section-header">
+    <div class="section-title">💼 Carrières</div>
+    <div class="section-count" id="count-carrieres">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-carrieres" style="width:0%"></div></div></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🏢 Carrières classiques</div>
+    <div class="items-grid compact" id="car-classic"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🎯 Carrières actives</div>
+    <div class="items-grid compact" id="car-active"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🎒 Activités parascolaires</div>
+    <div class="items-grid compact" id="car-para"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">💰 Freelance & Indépendant</div>
+    <div class="items-grid compact" id="car-free"></div>
+  </div>
+</div>
+
+<!-- ═══ TRAITS RÉCOMPENSE ═══ -->
+<div class="tracker-section" id="section-traits">
+  <div class="section-header">
+    <div class="section-title">🏆 Traits Récompense</div>
+    <div class="section-count" id="count-traits">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-traits" style="width:0%"></div></div></div>
+  </div>
+  <div class="items-grid" id="traits-list"></div>
+</div>
+
+<!-- ═══ DIPLÔMES ═══ -->
+<div class="tracker-section" id="section-diplomes">
+  <div class="section-header">
+    <div class="section-title">🎓 Diplômes Universitaires</div>
+    <div class="section-count" id="count-diplomes">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-diplomes" style="width:0%"></div></div></div>
+  </div>
+  <p style="font-size:.68rem; color:rgba(240,236,255,0.5); margin-bottom:1.5rem; font-style:italic;">Requiert : Vie Universitaire</p>
+  <div class="items-grid" id="diplomes-list"></div>
+</div>
+
+<!-- ═══ OCCULTISTES ═══ -->
+<div class="tracker-section" id="section-occultistes">
+  <div class="section-header">
+    <div class="section-title">🌙 Pouvoirs Occultistes</div>
+    <div class="section-count" id="count-occultistes">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-occultistes" style="width:0%"></div></div></div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">🧛 Pouvoirs Vampires</div>
+    <div class="items-grid compact" id="occ-vampire"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🧙 Pouvoirs Sorciers</div>
+    <div class="items-grid compact" id="occ-sorcier"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🐺 Pouvoirs Garous</div>
+    <div class="items-grid compact" id="occ-garou"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">👻 Maîtrise des Fantômes</div>
+    <div class="items-grid compact" id="occ-fantome"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🧚 Pouvoirs des Fées</div>
+    <div class="items-grid compact" id="occ-fee"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🧜 Formes Occultistes</div>
+    <div class="items-grid compact" id="occ-forme"></div>
+  </div>
+</div>
+
+<!-- ═══ JALONS ═══ -->
+<div class="tracker-section" id="section-jalons">
+  <div class="section-header">
+    <div class="section-title">🌟 Jalons de Vie</div>
+    <div class="section-count" id="count-jalons">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-jalons" style="width:0%"></div></div></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🏠 Vie & Carrière</div>
+    <div class="items-grid compact" id="jal-vie"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">❤️ Relations & Amour</div>
+    <div class="items-grid compact" id="jal-amour"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">👶 Nourrissons & Bambins</div>
+    <div class="items-grid compact" id="jal-bebe"></div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">🎒 Enfants & Ados</div>
+    <div class="items-grid compact" id="jal-enfant"></div>
+  </div>
+</div>
+
+<!-- ═══ NOTORIÉTÉ ═══ -->
+<div class="tracker-section" id="section-notoriete">
+  <div class="section-header">
+    <div class="section-title">⭐ Notoriété & Célébrité</div>
+    <div class="section-count" id="count-notoriete">0 / 0</div>
+    <div class="section-prog"><div class="section-prog-bar"><div class="section-prog-fill" id="prog-notoriete" style="width:0%"></div></div></div>
+  </div>
+  <p style="font-size:.68rem; color:rgba(240,236,255,0.5); margin-bottom:1.5rem; font-style:italic;">Requiert : Heure de Gloire</p>
+  <div class="items-grid" id="notoriete-list"></div>
+</div>
+
+</main>
+
+<div id="toast">✓ Sauvegardé</div>
+
+<script>
+// ═══ DONNÉES ═══
+
+const DATA = {
+
+  aspirations: {
+    base: [
+      {id:'asp_artiste', name:'Génie Créatif'}, {id:'asp_auteur', name:'Auteur Bestseller'},
+      {id:'asp_musicien', name:'Génie Musical'}, {id:'asp_peintre', name:'Peintre Extraordinaire'},
+      {id:'asp_ennemi', name:'Ennemi Public N°1'}, {id:'asp_malice', name:'Chef de la Malveillance'},
+      {id:'asp_val_sombre', name:'Valentin Menaçant'}, {id:'asp_pickpocket', name:'Doigts Collants'},
+      {id:'asp_riche', name:'Fabuleux et Riche'}, {id:'asp_baron', name:'Baron des Manoirs'},
+      {id:'asp_famille', name:'Grande Famille Heureuse'}, {id:'asp_lignee', name:'Lignée Réussie'},
+      {id:'asp_chef', name:'Chef Étoilé'}, {id:'asp_mixo', name:'Maître Mixologue'},
+      {id:'asp_fromage', name:'Grilled Cheese'}, {id:'asp_romance', name:'Romantique Effréné'},
+      {id:'asp_amour', name:'Âme Sœur'}, {id:'asp_botaniste', name:'Botaniste Amateur'},
+      {id:'asp_collectionneur', name:'Le Collectionneur'}, {id:'asp_pecheur', name:'As de la Pêche'},
+      {id:'asp_nerd', name:'Cerveau Analytique'}, {id:'asp_ordi', name:'Geek en Herbe'},
+      {id:'asp_renaissance', name:'Sim Renaissance'}, {id:'asp_fete', name:'Animal de Fête'},
+      {id:'asp_ami_monde', name:'Ami du Monde'}, {id:'asp_blague', name:'Roi de la Vanne'},
+    ],
+    ext: [
+      {id:'asp_animaux', name:'Ami des Animaux', pack:'Chiens & Chats'},
+      {id:'asp_muscu', name:'Culturiste', pack:'Jeu de base'},
+      {id:'asp_extreme', name:'Sportif Extrême', pack:'Horizons Neigeux'},
+      {id:'asp_cavalier', name:'Champion Équestre', pack:'Ranch de chevaux'},
+      {id:'asp_acteur', name:'Maître Acteur/Actrice', pack:'Heure de Gloire'},
+      {id:'asp_fabricant', name:'Maître Fabricant', pack:'Mode Éco'},
+      {id:'asp_tricot', name:'Maître du Tricot', pack:'Tricot Créatif'},
+      {id:'asp_vampire_fam', name:'Famille de Vampires', pack:'Vampires'},
+      {id:'asp_vampire_bien', name:'Bon Vampire', pack:'Vampires'},
+      {id:'asp_vampire_maitre', name:'Maître Vampire', pack:'Vampires'},
+      {id:'asp_parent', name:'Super Parent', pack:'Parentalité'},
+      {id:'asp_archeologie', name:'Archéologue Érudit', pack:'Aventure dans la Jungle'},
+      {id:'asp_magie', name:'Sorcellerie & Magie', pack:'Royaume de la Magie'},
+      {id:'asp_universite', name:'Académicien', pack:'Vie Universitaire'},
+      {id:'asp_eco', name:'Innovateur Écolo', pack:'Mode Éco'},
+      {id:'asp_celebrite', name:'Célébrité Mondiale', pack:'Heure de Gloire'},
+      {id:'asp_strangerville', name:'Mystère StrangerVille', pack:'StrangerVille'},
+      {id:'asp_plage', name:'Vie de Plage', pack:'Îles Paradisiaques'},
+      {id:'asp_montagne', name:'Randonnée au Komorebi', pack:'Horizons Neigeux'},
+      {id:'asp_campagne', name:'Gardien de Campagne', pack:'Vie à la Campagne'},
+      {id:'asp_galaxie', name:'Privateer Galactique', pack:'Star Wars'},
+      {id:'asp_garou_seul', name:'Loup Solitaire', pack:'Garous'},
+      {id:'asp_garou_collectif', name:'Émissaire du Collectif', pack:'Garous'},
+      {id:'asp_fantome_hist', name:'Historien des Fantômes', pack:'La Vie & la Mort'},
+      {id:'asp_mentorat', name:'Maître Mentor', pack:'Commerce & Loisirs'},
+      {id:'asp_elixir', name:'Passionné d\'Élixirs', pack:'Enchantée par la Nature'},
+      {id:'asp_fee_harmonie', name:'Fée Harmonieuse', pack:'Enchantée par la Nature'},
+      {id:'asp_fee_discorde', name:'Fée Discordante', pack:'Enchantée par la Nature'},
+      {id:'asp_chasseur_critter', name:'Chasseur de Bestioles', pack:'L\'Aventure vous attend'},
+      {id:'asp_poterie', name:'Maître Potier', pack:'Commerce & Loisirs'},
+      {id:'asp_cristal', name:'Artisan Cristal', pack:'Créations en Cristal'},
+      {id:'asp_equitation', name:'Cavalier Champion', pack:'Ranch de Chevaux'},
+      {id:'asp_nectar', name:'Expert Nectariseur', pack:'Ranch de Chevaux'},
+      {id:'asp_apoth', name:'Apothicaire Naturel', pack:'Enchantée par la Nature'},
+      {id:'asp_royaute', name:'Noble Royauté', pack:'Royauté & Héritage'},
+    ]
+  },
+
+  competences: {
+    base: [
+      {id:'sk_charisme', name:'Charisme', max:10},
+      {id:'sk_comedie', name:'Comédie', max:10},
+      {id:'sk_cuisine', name:'Cuisine', max:10},
+      {id:'sk_peche', name:'Pêche', max:10},
+      {id:'sk_fitness', name:'Fitness', max:10},
+      {id:'sk_jardinage', name:'Jardinage', max:10},
+      {id:'sk_cuisine_gourmet', name:'Cuisine Gastronomique', max:10},
+      {id:'sk_guitare', name:'Guitare', max:10},
+      {id:'sk_bricolage', name:'Bricolage', max:10},
+      {id:'sk_logique', name:'Logique', max:10},
+      {id:'sk_malice', name:'Malice', max:10},
+      {id:'sk_mixologie', name:'Mixologie', max:10},
+      {id:'sk_peinture', name:'Peinture', max:10},
+      {id:'sk_piano', name:'Piano', max:10},
+      {id:'sk_photo', name:'Photographie', max:10},
+      {id:'sk_programmation', name:'Programmation', max:10},
+      {id:'sk_fusee', name:'Science des Fusées', max:10},
+      {id:'sk_video', name:'Jeux Vidéo', max:10},
+      {id:'sk_violon', name:'Violon', max:10},
+      {id:'sk_ecriture', name:'Écriture', max:10},
+    ],
+    ext: [
+      {id:'sk_herbalisme', name:'Herbalisme', max:10, pack:'Retraite en Plein Air'},
+      {id:'sk_patisserie', name:'Pâtisserie', max:10, pack:'Au Travail'},
+      {id:'sk_bienetre', name:'Bien-être', max:10, pack:'Journée au Spa'},
+      {id:'sk_danse', name:'Danse', max:10, pack:'Se Regrouper'},
+      {id:'sk_dj', name:'DJ', max:10, pack:'Se Regrouper'},
+      {id:'sk_chant', name:'Chant', max:10, pack:'Vie en Ville'},
+      {id:'sk_orgue', name:'Orgue à Tuyaux', max:10, pack:'Vampires'},
+      {id:'sk_lore_vampire', name:'Lore des Vampires', max:10, pack:'Vampires'},
+      {id:'sk_bowling', name:'Bowling', max:10, pack:'Soirée Bowling'},
+      {id:'sk_parentalite', name:'Parentalité', max:10, pack:'Parentalité'},
+      {id:'sk_dressage', name:'Dressage Animaux', max:10, pack:'Chiens & Chats'},
+      {id:'sk_veto', name:'Vétérinaire', max:10, pack:'Chiens & Chats'},
+      {id:'sk_archeo', name:'Archéologie', max:10, pack:'Jungle'},
+      {id:'sk_culture_selva', name:'Culture Selvadoradienne', max:10, pack:'Jungle'},
+      {id:'sk_fleurs', name:'Art Floral', max:10, pack:'Saisons'},
+      {id:'sk_jeu_acteur', name:'Art Dramatique', max:10, pack:'Heure de Gloire'},
+      {id:'sk_media', name:'Production Média', max:10, pack:'Heure de Gloire'},
+      {id:'sk_debat', name:'Recherche & Débat', max:10, pack:'Vie Universitaire'},
+      {id:'sk_robotique', name:'Robotique', max:10, pack:'Vie Universitaire'},
+      {id:'sk_fabrication', name:'Fabrication', max:10, pack:'Mode Éco'},
+      {id:'sk_jus', name:'Fermentation', max:10, pack:'Mode Éco'},
+      {id:'sk_tricot', name:'Tricot', max:10, pack:'Tricot Créatif'},
+      {id:'sk_escalade', name:'Escalade', max:10, pack:'Horizons Neigeux'},
+      {id:'sk_ski', name:'Ski', max:10, pack:'Horizons Neigeux'},
+      {id:'sk_snowboard', name:'Snowboard', max:10, pack:'Horizons Neigeux'},
+      {id:'sk_medium', name:'Médium', max:10, pack:'Paranormal'},
+      {id:'sk_broderie', name:'Broderie', max:10, pack:'Vie à la Campagne'},
+      {id:'sk_entrepreneur', name:'Entrepreneuriat', max:10, pack:'Années Lycée'},
+      {id:'sk_equitation', name:'Équitation', max:10, pack:'Ranch de Chevaux'},
+      {id:'sk_nectar', name:'Nectarisation', max:10, pack:'Ranch de Chevaux'},
+      {id:'sk_gemologie', name:'Gemmologie', max:10, pack:'Créations en Cristal'},
+      {id:'sk_romance', name:'Romance', max:10, pack:'Coup de Foudre'},
+      {id:'sk_thanatologie', name:'Thanatologie', max:10, pack:'La Vie & la Mort'},
+      {id:'sk_poterie', name:'Poterie', max:10, pack:'Commerce & Loisirs'},
+      {id:'sk_tatouage', name:'Tatouage', max:10, pack:'Commerce & Loisirs'},
+      {id:'sk_vie_naturelle', name:'Vie Naturelle', max:10, pack:'Enchantée par la Nature'},
+      {id:'sk_apothicaire', name:'Apothicaire', max:10, pack:'Enchantée par la Nature'},
+      {id:'sk_tir_arc', name:'Tir à l\'Arc', max:10, pack:'L\'Aventure vous attend'},
+      {id:'sk_papercraft', name:'Papercraft', max:10, pack:'L\'Aventure vous attend'},
+      {id:'sk_plongee', name:'Plongée', max:10, pack:'L\'Aventure vous attend'},
+      {id:'sk_entomologie', name:'Entomologie', max:10, pack:'L\'Aventure vous attend'},
+      {id:'sk_epee', name:'Escrime', max:10, pack:'Royauté & Héritage'},
+    ],
+    enfant: [
+      {id:'sk_creativite', name:'Créativité', max:10},
+      {id:'sk_mental', name:'Mental', max:10},
+      {id:'sk_moteur', name:'Motricité', max:10},
+      {id:'sk_social_enf', name:'Social', max:10},
+      {id:'sk_imagination', name:'Imagination (bambin)', max:5},
+      {id:'sk_communication', name:'Communication (bambin)', max:5},
+      {id:'sk_proprete', name:'Propreté (bambin)', max:3},
+      {id:'sk_reflexion', name:'Réflexion (bambin)', max:5},
+      {id:'sk_mouvement', name:'Mouvement (bambin)', max:5},
+    ]
+  },
+
+  carrieres: {
+    classic: [
+      {id:'car_astronaute', name:'Astronaute'},
+      {id:'car_athlete', name:'Athlète'},
+      {id:'car_business', name:'Business'},
+      {id:'car_criminel', name:'Criminel'},
+      {id:'car_culinaire', name:'Culinaire'},
+      {id:'car_animateur', name:'Animateur'},
+      {id:'car_peintre', name:'Peintre'},
+      {id:'car_agent', name:'Agent Secret'},
+      {id:'car_styliste', name:'Influenceur de Style'},
+      {id:'car_tech', name:'Gourou Tech'},
+      {id:'car_ecrivain', name:'Écrivain'},
+      {id:'car_gardener', name:'Jardinier', pack:'Saisons'},
+      {id:'car_acteur', name:'Acteur', pack:'Heure de Gloire'},
+      {id:'car_militaire', name:'Militaire', pack:'StrangerVille'},
+      {id:'car_conservateur', name:'Conservationniste', pack:'Îles Paradisiaques'},
+      {id:'car_education', name:'Éducation', pack:'Vie Universitaire'},
+      {id:'car_ingenieur', name:'Ingénieur', pack:'Vie Universitaire'},
+      {id:'car_droit', name:'Droit', pack:'Vie Universitaire'},
+      {id:'car_eco_civil', name:'Urbaniste', pack:'Mode Éco'},
+      {id:'car_salarie', name:'Salarié', pack:'Horizons Neigeux'},
+      {id:'car_deco', name:'Décorateur Intérieur', pack:'Déco de Rêve'},
+      {id:'car_critique', name:'Critique', pack:'Vie en Ville'},
+      {id:'car_politique', name:'Politicien', pack:'Vie en Ville'},
+      {id:'car_social_media', name:'Réseaux Sociaux', pack:'Vie en Ville'},
+      {id:'car_reaper', name:'Faucheur', pack:'La Vie & la Mort'},
+      {id:'car_thanatologue', name:'Thanatologue', pack:'La Vie & la Mort'},
+      {id:'car_naturopathe', name:'Naturopathe', pack:'Enchantée par la Nature'},
+      {id:'car_noble', name:'Noble', pack:'Royauté & Héritage'},
+    ],
+    active: [
+      {id:'car_detective', name:'Détective', pack:'Au Travail'},
+      {id:'car_docteur', name:'Docteur', pack:'Au Travail'},
+      {id:'car_scientifique', name:'Scientifique', pack:'Au Travail'},
+      {id:'car_plongeur', name:'Plongeur', pack:'Îles Paradisiaques'},
+      {id:'car_pecheur_ile', name:'Pêcheur', pack:'Îles Paradisiaques'},
+      {id:'car_sauveteur', name:'Sauveteur', pack:'Îles Paradisiaques'},
+      {id:'car_handy', name:'Homme à Tout Faire', pack:'En Location'},
+      {id:'car_romance_consul', name:'Consultant en Romance', pack:'Coup de Foudre'},
+      {id:'car_parkworker', name:'Gardien de Parc', pack:'L\'Aventure vous attend'},
+    ],
+    para: [
+      {id:'car_baby', name:'Baby-sitter'},
+      {id:'car_barista', name:'Barista'},
+      {id:'car_fastfood', name:'Fast Food'},
+      {id:'car_manoeuvre', name:'Manœuvre'},
+      {id:'car_vendeur', name:'Vendeur'},
+      {id:'car_simfluencer', name:'Simfluencer', pack:'Années Lycée'},
+      {id:'car_streamer', name:'Streamer Jeux Vidéo', pack:'Années Lycée'},
+      {id:'car_scout', name:'Scout', pack:'Saisons'},
+      {id:'car_drama', name:'Cours de Théâtre', pack:'Heure de Gloire'},
+      {id:'car_esport', name:'E-Sport', pack:'Vie Universitaire'},
+      {id:'car_foot_univ', name:'Équipe de Football', pack:'Vie Universitaire'},
+      {id:'car_cheer', name:'Cheerleader', pack:'Années Lycée'},
+      {id:'car_echecs', name:'Club d\'Échecs', pack:'Années Lycée'},
+      {id:'car_ordi_lycee', name:'Club Informatique', pack:'Années Lycée'},
+      {id:'car_football_lycee', name:'Équipe de Football', pack:'Années Lycée'},
+    ],
+    free: [
+      {id:'car_free_prog', name:'Programmeur Freelance'},
+      {id:'car_free_artiste', name:'Artiste Freelance'},
+      {id:'car_free_ecrivain', name:'Écrivain Freelance'},
+      {id:'car_free_photo', name:'Photographe de Mode', pack:'Moschino'},
+      {id:'car_free_fab', name:'Fabricant / Fermenteur / Chandelier', pack:'Mode Éco'},
+      {id:'car_paranormal_inv', name:'Enquêteur Paranormal', pack:'Paranormal'},
+    ]
+  },
+
+  traits: [
+    {id:'tr_bienvenu', name:'Toujours Bienvenu', cout:500},
+    {id:'tr_gym', name:'Rat de Gym', cout:500},
+    {id:'tr_observateur', name:'Observateur', cout:500},
+    {id:'tr_nettoyage', name:'Nettoyage Rapide', cout:500},
+    {id:'tr_conteur', name:'Grand Conteur', cout:500, pack:'Retraite'},
+    {id:'tr_chaleur', name:'Résistant à la Chaleur', cout:500, pack:'Saisons'},
+    {id:'tr_froid', name:'Résistant au Froid', cout:500, pack:'Saisons'},
+    {id:'tr_impermeable', name:'Imperméable', cout:500, pack:'Saisons'},
+    {id:'tr_explorateur', name:'Explorateur Inspiré', cout:1000},
+    {id:'tr_mentor', name:'Mentor', cout:1000},
+    {id:'tr_matin', name:'Lève-tôt', cout:1000},
+    {id:'tr_nuit', name:'Noctambule', cout:1000},
+    {id:'tr_lecture', name:'Lecteur Rapide', cout:1000},
+    {id:'tr_tempete', name:'Chasseur de Tempête', cout:1000, pack:'Saisons'},
+    {id:'tr_services', name:'Services Gratuits', cout:1500},
+    {id:'tr_vendable', name:'Vendable', cout:1500},
+    {id:'tr_barbecue', name:'Maître du Barbecue', cout:1500, pack:'Retraite'},
+    {id:'tr_visionnaire', name:'Visionnaire Créatif', cout:2000},
+    {id:'tr_entrepreneur', name:'Entrepreneur', cout:2000},
+    {id:'tr_frugal', name:'Frugal', cout:2000},
+    {id:'tr_independant', name:'Indépendant', cout:2000},
+    {id:'tr_sans_honte', name:'Sans Vergogne', cout:2000},
+    {id:'tr_vessie', name:'Vessie en Acier', cout:2000},
+    {id:'tr_sympa', name:'Incroyablement Sympathique', cout:2000, pack:'Retraite'},
+    {id:'tr_chaud_proof', name:'À l\'Épreuve de la Chaleur', cout:2000, pack:'Saisons'},
+    {id:'tr_glace_proof', name:'À l\'Épreuve du Gel', cout:2000, pack:'Saisons'},
+    {id:'tr_seduisant', name:'Séduisant', cout:2500},
+    {id:'tr_antiseptique', name:'Antiseptique', cout:3000},
+    {id:'tr_desinvolte', name:'Désinvolte', cout:3000},
+    {id:'tr_connections', name:'Connexions', cout:3000},
+    {id:'tr_fertile', name:'Fertile', cout:3000},
+    {id:'tr_grand_bisou', name:'Grand Bisou', cout:3000},
+    {id:'tr_enqueteur', name:'Licence Enquêteur Paranormal', cout:3000, pack:'Paranormal'},
+    {id:'tr_pas_faim', name:'Rarement Faim', cout:4000},
+    {id:'tr_tire_au_flanc', name:'Tire-au-flanc Pro', cout:4000},
+    {id:'tr_savant', name:'Savant', cout:4000},
+    {id:'tr_pas_sommeil', name:'Dort Peu', cout:4000},
+    {id:'tr_pouce_vert', name:'Super Pouce Vert', cout:4000},
+    {id:'tr_solitaire', name:'N\'a Besoin de Personne', cout:5000},
+    {id:'tr_courageux', name:'Courageux', cout:8000},
+    {id:'tr_frais', name:'Toujours Frais', cout:8000},
+    {id:'tr_toujours_rassasie', name:'Toujours Rassasié', cout:10000},
+    {id:'tr_jamais_fatigue', name:'Jamais Fatigué', cout:10000},
+    {id:'tr_vache_morte', name:'Vache Morte Non-Morte', cout:3000, pack:'La Vie & la Mort'},
+    {id:'tr_enfance_aventure', name:'Enfance d\'Aventure', cout:100, pack:'L\'Aventure vous attend'},
+  ],
+
+  diplomes: [
+    {id:'dip_histoire_art', name:'Histoire de l\'Art'},
+    {id:'dip_biologie', name:'Biologie'},
+    {id:'dip_communication', name:'Communication'},
+    {id:'dip_informatique', name:'Informatique'},
+    {id:'dip_arts_culinaires', name:'Arts Culinaires'},
+    {id:'dip_theatre', name:'Théâtre'},
+    {id:'dip_economie', name:'Économie'},
+    {id:'dip_beaux_arts', name:'Beaux-Arts'},
+    {id:'dip_histoire', name:'Histoire'},
+    {id:'dip_litterature', name:'Langue & Littérature'},
+    {id:'dip_physique', name:'Physique'},
+    {id:'dip_psycho', name:'Psychologie'},
+    {id:'dip_sceleratesse', name:'Scélératesse'},
+  ],
+
+  occultistes: {
+    vampire: [
+      {id:'vamp_detecter', name:'Détecter la Personnalité'},
+      {id:'vamp_chauve', name:'Forme Chauve-Souris'},
+      {id:'vamp_hallucination', name:'Projeter une Hallucination'},
+      {id:'vamp_bienvenu', name:'Éternellement Bienvenu'},
+      {id:'vamp_creation', name:'Création de Vampires'},
+      {id:'vamp_ail', name:'Immunité à l\'Ail'},
+      {id:'vamp_commande', name:'Commandement'},
+      {id:'vamp_force', name:'Force Vampirique'},
+      {id:'vamp_charme', name:'Charme Vampirique'},
+      {id:'vamp_mesmeriser', name:'Mesmériser'},
+      {id:'vamp_lune', name:'Enfant de la Lune'},
+      {id:'vamp_sommeil', name:'Sommeil Irrésistible'},
+      {id:'vamp_vie', name:'Manipuler l\'Esprit Vital'},
+      {id:'vamp_sommeil2', name:'Sommeil Vampirique'},
+      {id:'vamp_inodore', name:'Inodore'},
+      {id:'vamp_soleil', name:'Résistance au Soleil'},
+      {id:'vamp_besoins', name:'Priver des Besoins'},
+      {id:'vamp_vitesse', name:'Vitesse Surnaturelle'},
+      {id:'vamp_emotions', name:'Émotions Atténuées'},
+      {id:'vamp_plaisirs', name:'Plaisirs Immortels'},
+      {id:'vamp_soif', name:'Soif Apprivoisée'},
+      {id:'vamp_au_dela', name:'Au-Delà du Troupeau'},
+      {id:'vamp_brume', name:'Forme Brume'},
+      {id:'vamp_influencer', name:'Influencer les Émotions'},
+    ],
+    sorcier: [
+      {id:'sorc_connaissance', name:'La Connaissance est Magie'},
+      {id:'sorc_bras', name:'Bras de Mixeur'},
+      {id:'sorc_decharge', name:'Décharge'},
+      {id:'sorc_herboriste', name:'Herboriste Incroyable'},
+      {id:'sorc_experimentateur', name:'Expérimentateur'},
+      {id:'sorc_notes', name:'Chasseur de Motes'},
+      {id:'sorc_frugal', name:'Combinaison Frugale'},
+      {id:'sorc_puissance', name:'Dérivation de Puissance'},
+      {id:'sorc_perspicace', name:'Œil Perspicace'},
+      {id:'sorc_social', name:'Sorcier Social'},
+      {id:'sorc_charge', name:'Contrôle de Charge'},
+      {id:'sorc_chimie', name:'Un Peu Plus de Chimie'},
+      {id:'sorc_spectral', name:'Portée Spectrale'},
+      {id:'sorc_pratique', name:'Praticité Pratiquée'},
+      {id:'sorc_malice', name:'Maître de la Malice'},
+      {id:'sorc_apprivoiser', name:'Apprivoiser l\'Indomptable'},
+      {id:'sorc_hexproof', name:'Résistant aux Malédictions'},
+      {id:'sorc_melange', name:'Maître du Mélange'},
+      {id:'sorc_lanceur', name:'Lanceur de Sorts Maître'},
+      {id:'sorc_mentor_nat', name:'Mentor Naturel'},
+      {id:'sorc_remise', name:'Réductions Magiques'},
+      {id:'sorc_resonance', name:'Résonance Magique'},
+      {id:'sorc_potions', name:'Potions Puissantes'},
+      {id:'sorc_duel', name:'Maître Duelliste'},
+    ],
+    garou: [
+      {id:'gar_vitesse', name:'Super Vitesse'},
+      {id:'gar_alpha', name:'Loup Alpha'},
+      {id:'gar_immortel', name:'Loup Immortel'},
+      {id:'gar_hurlement_lune', name:'Hurlement Lunaire'},
+      {id:'gar_heritage', name:'Héritage du Lycanthrope'},
+      {id:'gar_hurlement_vicieux', name:'Hurlement Vicieux'},
+      {id:'gar_chasse', name:'Partie de Chasse'},
+      {id:'gar_resistance', name:'Résistance Lunaire'},
+      {id:'gar_tunnel', name:'Tunnelier'},
+      {id:'gar_instincts', name:'Instincts Primaires'},
+      {id:'gar_benediction', name:'Bénédiction Lunaire'},
+      {id:'gar_vision', name:'Vision Nocturne'},
+      {id:'gar_guerison', name:'Guérison Naturelle'},
+      {id:'gar_meute', name:'Hurlement de Meute'},
+      {id:'gar_porteur', name:'Porteur de Malédiction'},
+      {id:'gar_faim', name:'Faim Vorace'},
+      {id:'gar_chasseur', name:'Chasseur'},
+      {id:'gar_resistance2', name:'La Volonté de Résister'},
+      {id:'gar_odorat', name:'Odorat Amélioré'},
+      {id:'gar_hurlement_sombre', name:'Hurlement Sombre'},
+      {id:'gar_ferocite', name:'Férocité'},
+      {id:'gar_sieste', name:'Sieste de Loup'},
+      {id:'gar_territoire', name:'Marquage du Territoire'},
+      {id:'gar_charognard', name:'Charognard'},
+      {id:'gar_toilettage', name:'Toilettage Personnel'},
+    ],
+    fantome: [
+      {id:'fan_malediction', name:'Malédiction Surnaturelle'},
+      {id:'fan_levitation', name:'Lévitation'},
+      {id:'fan_cri', name:'Cri Hanté'},
+      {id:'fan_objets', name:'Manipulation d\'Objets'},
+      {id:'fan_spectacle', name:'Spectacle Fantomatique'},
+      {id:'fan_devoreur', name:'Dévoreur'},
+      {id:'fan_reves', name:'Corrupteur de Rêves'},
+      {id:'fan_presence', name:'Présence Sombre'},
+      {id:'fan_conjureur', name:'Conjurateur'},
+      {id:'fan_endurance', name:'Endurance Puissante'},
+      {id:'fan_transcendance', name:'Transcender les Besoins Vitaux'},
+      {id:'fan_peur', name:'Craindre la Nuit'},
+      {id:'fan_traverser', name:'Traversée Spectrale'},
+      {id:'fan_sommeil_spec', name:'Sommeil Spectral'},
+      {id:'fan_woohoo', name:'WooHoo Transcendant'},
+      {id:'fan_benediction', name:'Bénédiction Bienveillante'},
+      {id:'fan_gardien', name:'Gardien de l\'Au-delà'},
+      {id:'fan_reves2', name:'Tisseur de Rêves'},
+      {id:'fan_presence2', name:'Présence Euphorique'},
+      {id:'fan_consolateur', name:'Consolateur'},
+      {id:'fan_altruiste', name:'Soignant Altruiste'},
+      {id:'fan_faucheur', name:'Complice du Faucheur'},
+    ],
+    fee: [
+      {id:'fee_gnome', name:'Donner Vie à un Gnome'},
+      {id:'fee_vieillir', name:'Faire Vieillir un Autre'},
+      {id:'fee_objet', name:'Manipuler un Objet'},
+      {id:'fee_chance', name:'Changer la Chance'},
+      {id:'fee_insight', name:'Intuition de Fée'},
+      {id:'fee_guerir', name:'Guérir ou Appliquer un Mal'},
+      {id:'fee_sentiment', name:'Influencer un Sentiment'},
+      {id:'fee_relation', name:'Influencer une Relation'},
+      {id:'fee_emotion', name:'Projeter une Émotion'},
+      {id:'fee_bouteille', name:'Mettre en Bouteille une Émotion'},
+      {id:'fee_balancer', name:'Transmettre une Émotion'},
+      {id:'fee_transformer', name:'Se Transformer en Fée'},
+      {id:'fee_plante', name:'Faire Fleurir une Plante'},
+      {id:'fee_recolte', name:'Sentir les Récoltes'},
+      {id:'fee_eruption', name:'Éruption de Croissance'},
+      {id:'fee_fourrager', name:'Fourrager & Dupliquer'},
+      {id:'fee_graine', name:'Manifester une Graine'},
+      {id:'fee_nourrir', name:'Nourrir la Nature'},
+      {id:'fee_regeneration', name:'Régénération Experte'},
+      {id:'fee_energique', name:'Rêveur Énergique'},
+      {id:'fee_resistance', name:'Résistance aux Débordements'},
+      {id:'fee_sensibilite', name:'Sensibilité aux Débordements'},
+    ],
+    forme: [
+      {id:'forme_vampire', name:'Devenir Vampire', pack:'Vampires'},
+      {id:'forme_sorcier', name:'Devenir Sorcier', pack:'Royaume de la Magie'},
+      {id:'forme_garou', name:'Devenir Garou', pack:'Garous'},
+      {id:'forme_sirene', name:'Devenir Sirène', pack:'Îles Paradisiaques'},
+      {id:'forme_plante', name:'Devenir Sim Plante'},
+      {id:'forme_alien', name:'Devenir Alien', pack:'Au Travail'},
+      {id:'forme_fantome', name:'Mourir & Revenir Fantôme'},
+      {id:'forme_fee', name:'Devenir Fée', pack:'Enchantée par la Nature'},
+      {id:'forme_non_occultiste', name:'Redevenir Humain'},
+    ]
+  },
+
+  jalons: {
+    vie: [
+      {id:'jal_naissance', name:'Naissance'},
+      {id:'jal_naissance_hop', name:'Naissance à l\'Hôpital', pack:'Au Travail'},
+      {id:'jal_naissance_maison', name:'Naissance à la Maison'},
+      {id:'jal_anniversaire', name:'Célébrer un Anniversaire'},
+      {id:'jal_adopte', name:'Adopté'},
+      {id:'jal_adoption_famille', name:'Adopter un Membre de la Famille'},
+      {id:'jal_premier_emploi', name:'Premier Emploi'},
+      {id:'jal_premiere_promo', name:'Première Promotion'},
+      {id:'jal_sommet_carriere', name:'Atteindre le Sommet d\'une Carrière'},
+      {id:'jal_licencie', name:'Licencié'},
+      {id:'jal_renvoye', name:'Renvoyé'},
+      {id:'jal_retraite', name:'Retraite'},
+      {id:'jal_quitter', name:'Quitter un Emploi'},
+      {id:'jal_decouverte', name:'Auto-Découverte'},
+      {id:'jal_mort', name:'Mort'},
+      {id:'jal_renaissance', name:'Renaissance !', pack:'La Vie & la Mort'},
+      {id:'jal_loterie', name:'Gagner à la Loterie', pack:'Saisons'},
+      {id:'jal_foudre', name:'Frappé par la Foudre', pack:'Saisons'},
+      {id:'jal_vache', name:'Mangé par la Vache à Lait'},
+      {id:'jal_bebe_cheval', name:'Assister à la Naissance d\'un Poulain', pack:'Ranch de Chevaux'},
+      {id:'jal_nectar_trop', name:'Trop de Nectar', pack:'Ranch de Chevaux'},
+      {id:'jal_alien_enleve', name:'Enlevé par les Aliens', pack:'Au Travail'},
+      {id:'jal_sixam', name:'Explorer Sixam', pack:'Au Travail'},
+      {id:'jal_plante_mere', name:'Vaincre la Plante Mère', pack:'StrangerVille'},
+      {id:'jal_plante_sim', name:'Devenir Sim Plante'},
+      {id:'jal_crise_mi_vie', name:'Crise de la Mi-Vie'},
+      {id:'jal_affaire_ami', name:'Avoir un Ami dans la Crypte', pack:'La Vie & la Mort'},
+      {id:'jal_entreprise', name:'Enregistrer une Petite Entreprise', pack:'Commerce & Loisirs'},
+      {id:'jal_vente_entreprise', name:'Vendre une Petite Entreprise', pack:'Commerce & Loisirs'},
+      {id:'jal_premier_simoleon', name:'Premier Simoleon Gagné', pack:'Commerce & Loisirs'},
+      {id:'jal_tatouage_donne', name:'Premier Tatouage Fait', pack:'Commerce & Loisirs'},
+      {id:'jal_tatouage_recu', name:'Premier Tatouage Reçu', pack:'Commerce & Loisirs'},
+    ],
+    amour: [
+      {id:'jal_premier_amour', name:'Tomber Amoureux'},
+      {id:'jal_relation', name:'Commencer une Relation'},
+      {id:'jal_fiancailles', name:'Se Fiancer'},
+      {id:'jal_mariage', name:'Se Marier'},
+      {id:'jal_veuf', name:'Veuf'},
+      {id:'jal_rupture', name:'Rupture'},
+      {id:'jal_refus_demande', name:'Demande en Mariage Refusée'},
+      {id:'jal_infidele', name:'Pris en Flagrant Délit'},
+      {id:'jal_tromperie', name:'Partenaire Infidèle'},
+      {id:'jal_aventure', name:'Avoir une Aventure'},
+      {id:'jal_bebe', name:'Avoir un Bébé'},
+      {id:'jal_ressusciter', name:'Ressusciter un Sim'},
+      {id:'jal_sauve', name:'Sauvé de la Mort'},
+      {id:'jal_ennemi', name:'Se Faire un Ennemi'},
+      {id:'jal_meilleur_ami', name:'Se Faire un Meilleur Ami'},
+      {id:'jal_woohoo_grim', name:'WooHoo avec le Faucheur !', pack:'La Vie & la Mort'},
+      {id:'jal_descendant_grim', name:'Avoir un Descendant du Faucheur', pack:'La Vie & la Mort'},
+      {id:'jal_satisfaction_max', name:'Satisfaction Romantique Max', pack:'Coup de Foudre'},
+      {id:'jal_satisfaction_min', name:'Satisfaction Romantique Min', pack:'Coup de Foudre'},
+    ],
+    bebe: [
+      {id:'jal_nuit', name:'Dormir Toute la Nuit'},
+      {id:'jal_premier_bain', name:'Premier Bain'},
+      {id:'jal_premier_cauchemar', name:'Premier Cauchemar'},
+      {id:'jal_pipi_garde', name:'Pipi sur le Gardien'},
+      {id:'jal_premier_energie', name:'Première Panne d\'Énergie'},
+      {id:'jal_couche', name:'Première Couche Explosive'},
+      {id:'jal_solide', name:'Premier Aliment Solide'},
+      {id:'jal_biberon', name:'Premier Biberon'},
+      {id:'jal_bain_bulles', name:'Premier Bain à Bulles'},
+      {id:'jal_doigt', name:'Doigt en Bouche'},
+      {id:'jal_ramper_ventre', name:'Rampé sur le Ventre'},
+      {id:'jal_ramper', name:'Apprendre à Ramper'},
+      {id:'jal_asseoir', name:'Se Tenir Assis'},
+      {id:'jal_debout', name:'Se Lever'},
+      {id:'jal_retourner_dos', name:'Se Retourner sur le Dos'},
+      {id:'jal_retourner_ventre', name:'Se Retourner sur le Ventre'},
+      {id:'jal_tete', name:'Lever la Tête'},
+      {id:'jal_pincer', name:'Prise en Pince'},
+      {id:'jal_attraper', name:'Attraper'},
+      {id:'jal_tendre', name:'Tendre les Bras'},
+      {id:'jal_agiter', name:'Agiter les Bras'},
+      {id:'jal_sourire', name:'Premier Sourire'},
+      {id:'jal_peekaboo', name:'Apprendre le Coucou'},
+      {id:'jal_babiller', name:'Babiller'},
+      {id:'jal_bisou', name:'Envoyer des Bisous'},
+      {id:'jal_framboise', name:'Faire une Framboise'},
+      {id:'jal_rire', name:'Rire'},
+      {id:'jal_parler', name:'Apprendre à Parler'},
+      {id:'jal_premier_mot', name:'Premier Mot'},
+      {id:'jal_marcher', name:'Apprendre à Marcher'},
+      {id:'jal_danser', name:'Danser'},
+      {id:'jal_courir', name:'Courir'},
+      {id:'jal_escaliers', name:'Monter les Escaliers'},
+    ],
+    enfant: [
+      {id:'jal_phase_enfance', name:'Phase d\'Enfance', pack:'Parentalité'},
+      {id:'jal_premier_ecole', name:'Premier Jour d\'École'},
+      {id:'jal_puberte', name:'Début de la Puberté', pack:'Années Lycée'},
+      {id:'jal_ami_enfance', name:'Premier Ami d\'Enfance'},
+      {id:'jal_lire', name:'Lire son Premier Livre'},
+      {id:'jal_dent', name:'Perdre sa Première Dent'},
+      {id:'jal_tantrum', name:'Faire une Crise'},
+      {id:'jal_velo', name:'Apprendre à Faire du Vélo'},
+      {id:'jal_pot', name:'Maîtriser le Pot'},
+      {id:'jal_creche', name:'Première Fois à la Crèche'},
+      {id:'jal_lycee_diplome', name:'Diplôme du Lycée', pack:'Années Lycée'},
+      {id:'jal_lycee_abandon', name:'Abandon du Lycée', pack:'Années Lycée'},
+      {id:'jal_lycee_exclu', name:'Exclusion du Lycée', pack:'Années Lycée'},
+      {id:'jal_prom', name:'Reine/Roi du Bal', pack:'Années Lycée'},
+      {id:'jal_premiere_betise', name:'Première Bêtise'},
+      {id:'jal_premiere_visite', name:'Première Visite en Famille'},
+      {id:'jal_vacances', name:'Première Vacances'},
+      {id:'jal_parc', name:'Premier Voyage au Parc'},
+      {id:'jal_univers_diplome', name:'Obtenir un Diplôme Universitaire', pack:'Vie Universitaire'},
+    ]
+  },
+
+  notoriete: [
+    {id:'not_complot', name:'Fauteur de Troubles'},
+    {id:'not_marque', name:'Marque Personnelle'},
+    {id:'not_equipe', name:'Équipe'},
+    {id:'not_facile', name:'La Belle Vie'},
+    {id:'not_traitement', name:'Traitement de Star'},
+    {id:'not_mechant', name:'Jouer le Méchant'},
+    {id:'not_pionnier', name:'Pionnier'},
+    {id:'not_amis_instantanes', name:'Amis Instantanés'},
+    {id:'not_chameleon', name:'Caméléon de Carrière'},
+    {id:'not_rally', name:'Rally !'},
+    {id:'not_mauvais', name:'Qui est le Méchant'},
+    {id:'not_nuit_blanche', name:'Nuit Blanche'},
+    {id:'not_favori', name:'Favori des Fans'},
+    {id:'not_nom_etabli', name:'Nom Établi'},
+    {id:'not_don', name:'Donner en Retour'},
+    {id:'not_influenceur', name:'Influenceur'},
+    {id:'not_rp', name:'Agence RP'},
+    {id:'not_serum', name:'CélébuSérum'},
+    {id:'not_partenariat', name:'Partenariat d\'Entreprise'},
+    {id:'not_reseau', name:'Réseautage'},
+    {id:'not_remarquable', name:'Remarquable'},
+  ]
+};
+
+// ═══ ÉTAT ═══
+let state = {};
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('sims4_tracker_v2');
+    if (saved) state = JSON.parse(saved);
+  } catch(e) { state = {}; }
+}
+
+function saveData() {
+  localStorage.setItem('sims4_tracker_v2', JSON.stringify(state));
+  showToast('✓ Sauvegardé !');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sims4_progression.json';
+  a.click();
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        state = JSON.parse(ev.target.result);
+        saveData();
+        renderAll();
+        showToast('✓ Importé !');
+      } catch(e) { showToast('⚠ Fichier invalide'); }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+function resetData() {
+  if (confirm('Réinitialiser toute ta progression ? Cette action est irréversible.')) {
+    state = {};
+    saveData();
+    renderAll();
+    showToast('Progression réinitialisée');
+  }
+}
+
+// ═══ RENDU ═══
+function mkCheck(item, section) {
+  const done = !!state[item.id];
+  const d = document.createElement('div');
+  d.className = 'item-check' + (done ? ' done' : '');
+  d.innerHTML = `
+    <div class="checkbox">${done ? '✓' : ''}</div>
+    <div class="item-info">
+      <div class="item-name">${item.name}</div>
+      ${item.pack ? `<div class="item-pack">${item.pack}</div>` : ''}
+      ${item.cout ? `<div class="item-pack">${item.cout} pts</div>` : ''}
+    </div>`;
+  d.onclick = () => {
+    state[item.id] = !state[item.id];
+    d.classList.toggle('done');
+    d.querySelector('.checkbox').textContent = state[item.id] ? '✓' : '';
+    d.querySelector('.item-name').style.textDecoration = state[item.id] ? 'line-through' : '';
+    saveData();
+    updateCounts();
+  };
+  return d;
+}
+
+function mkSkill(item) {
+  const level = state[item.id] || 0;
+  const maxed = level >= item.max;
+  const d = document.createElement('div');
+  d.className = 'item-skill' + (maxed ? ' maxed' : '');
+  d.innerHTML = `
+    <div class="skill-top">
+      <div class="skill-level">${level}</div>
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        ${item.pack ? `<div class="item-pack">${item.pack}</div>` : ''}
+      </div>
+    </div>
+    <div class="skill-bar">${Array.from({length: item.max}, (_,i) =>
+      `<div class="skill-pip${i < level ? ' filled' : ''}" data-pip="${i+1}"></div>`
+    ).join('')}</div>`;
+  
+  d.querySelectorAll('.skill-pip').forEach(pip => {
+    pip.onclick = (e) => {
+      e.stopPropagation();
+      const val = parseInt(pip.dataset.pip);
+      const current = state[item.id] || 0;
+      state[item.id] = current === val ? val - 1 : val;
+      d.querySelector('.skill-level').textContent = state[item.id];
+      d.querySelectorAll('.skill-pip').forEach((p,i) => {
+        p.classList.toggle('filled', i < state[item.id]);
+      });
+      d.classList.toggle('maxed', state[item.id] >= item.max);
+      saveData();
+      updateCounts();
+    };
+  });
+  return d;
+}
+
+function renderSection(containerId, items, type='check') {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach(item => {
+    el.appendChild(type === 'skill' ? mkSkill(item) : mkCheck(item, containerId));
+  });
+}
+
+function renderAll() {
+  // Aspirations
+  renderSection('asp-base', DATA.aspirations.base);
+  renderSection('asp-ext', DATA.aspirations.ext);
+  // Compétences
+  renderSection('skill-base', DATA.competences.base, 'skill');
+  renderSection('skill-ext', DATA.competences.ext, 'skill');
+  renderSection('skill-enfant', DATA.competences.enfant, 'skill');
+  // Carrières
+  renderSection('car-classic', DATA.carrieres.classic);
+  renderSection('car-active', DATA.carrieres.active);
+  renderSection('car-para', DATA.carrieres.para);
+  renderSection('car-free', DATA.carrieres.free);
+  // Traits
+  renderSection('traits-list', DATA.traits);
+  // Diplômes
+  renderSection('diplomes-list', DATA.diplomes);
+  // Occultistes
+  renderSection('occ-vampire', DATA.occultistes.vampire);
+  renderSection('occ-sorcier', DATA.occultistes.sorcier);
+  renderSection('occ-garou', DATA.occultistes.garou);
+  renderSection('occ-fantome', DATA.occultistes.fantome);
+  renderSection('occ-fee', DATA.occultistes.fee);
+  renderSection('occ-forme', DATA.occultistes.forme);
+  // Jalons
+  renderSection('jal-vie', DATA.jalons.vie);
+  renderSection('jal-amour', DATA.jalons.amour);
+  renderSection('jal-bebe', DATA.jalons.bebe);
+  renderSection('jal-enfant', DATA.jalons.enfant);
+  // Notoriété
+  renderSection('notoriete-list', DATA.notoriete);
+
+  updateCounts();
+}
+
+function getSectionStats(ids) {
+  const allIds = ids.flat();
+  const done = allIds.filter(id => {
+    if (id.startsWith('sk_') || id.startsWith('occ_') ) {
+      return (state[id] || 0) >= 1;
+    }
+    return !!state[id];
+  }).length;
+  return {done, total: allIds.length};
+}
+
+function getSkillDone(items) {
+  return items.filter(item => (state[item.id] || 0) >= item.max).length;
+}
+
+function updateCounts() {
+  const sections = {
+    aspirations: [...DATA.aspirations.base, ...DATA.aspirations.ext].map(i=>i.id),
+    competences: null,
+    carrieres: [...DATA.carrieres.classic, ...DATA.carrieres.active, ...DATA.carrieres.para, ...DATA.carrieres.free].map(i=>i.id),
+    traits: DATA.traits.map(i=>i.id),
+    diplomes: DATA.diplomes.map(i=>i.id),
+    occultistes: [...DATA.occultistes.vampire,...DATA.occultistes.sorcier,...DATA.occultistes.garou,...DATA.occultistes.fantome,...DATA.occultistes.fee,...DATA.occultistes.forme].map(i=>i.id),
+    jalons: [...DATA.jalons.vie,...DATA.jalons.amour,...DATA.jalons.bebe,...DATA.jalons.enfant].map(i=>i.id),
+    notoriete: DATA.notoriete.map(i=>i.id),
+  };
+
+  let globalDone = 0, globalTotal = 0;
+
+  Object.keys(sections).forEach(key => {
+    let done, total;
+    if (key === 'competences') {
+      const all = [...DATA.competences.base,...DATA.competences.ext,...DATA.competences.enfant];
+      done = getSkillDone(all);
+      total = all.length;
+    } else {
+      const ids = sections[key];
+      done = ids.filter(id => !!state[id]).length;
+      total = ids.length;
+    }
+    const countEl = document.getElementById('count-'+key);
+    const progEl = document.getElementById('prog-'+key);
+    if (countEl) countEl.textContent = `${done} / ${total}`;
+    if (progEl) progEl.style.width = total ? `${(done/total)*100}%` : '0%';
+    globalDone += done;
+    globalTotal += total;
+  });
+
+  const pct = globalTotal ? Math.round((globalDone/globalTotal)*100) : 0;
+  document.getElementById('global-pct').textContent = pct + '%';
+  document.getElementById('global-fill').style.width = pct + '%';
+}
+
+// ═══ NAVIGATION ═══
+function showSection(name) {
+  document.querySelectorAll('.tracker-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ═══ TOAST ═══
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══ AUTO-SAVE ═══
+setInterval(saveData, 30000);
+
+// ═══ INIT ═══
+loadData();
+renderAll();
+</script>
+</body>
+</html>
