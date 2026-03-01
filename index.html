@@ -471,9 +471,13 @@ main { max-width:1400px; margin:0 auto; padding:2rem; }
 
     <label class="modal-label">📁 Save EA (optionnel — pour sauvegarde combinée)</label>
     <div class="save-attach-zone" id="save-attach-zone" onclick="attachSave()">
-      Clique pour attacher ton fichier .save EA (optionnel)
+      📁 Attacher mon fichier .save EA (optionnel)
     </div>
-    <div id="save-file-name" style="font-size:.72rem; color:rgba(240,236,255,0.4); margin-top:-.7rem; margin-bottom:.8rem;"></div>
+    <div id="save-file-name" style="font-size:.78rem; color:rgba(240,236,255,0.45); margin-top:-.5rem; margin-bottom:.8rem;"></div>
+    <div style="font-size:.75rem; color:rgba(240,236,255,0.3); margin-top:-.5rem; margin-bottom:1rem; line-height:1.5;">
+      💡 La save ne peut pas être stockée dans le navigateur (trop volumineuse).<br>
+      Elle sera <strong style="color:rgba(240,236,255,0.5);">incluse dans ton export JSON</strong> et récupérable après import.
+    </div>
 
     <label class="modal-label">Couleur du profil</label>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem;" id="color-picker">
@@ -767,14 +771,29 @@ function updateProfileDisplay() {
 
   // Bouton télécharger save EA
   const saveDlBtn = document.getElementById('save-dl-btn');
-  const hasSaveLocal = !!localStorage.getItem('sims4_save_' + currentProfileId);
-  const hasSaveInProfile = !!(p.hasSave || p.saveData || p.saveName);
-  saveDlBtn.style.display = (hasSaveLocal || hasSaveInProfile) ? 'inline-block' : 'none';
+  // Bouton visible si : save en mémoire session OU pendingSave OU profil indique hasSave
+  const hasSaveAvailable = !!(sessionSaveData || pendingSaveData);
+  const hasSaveFlag = !!(p.hasSave || p.saveName);
+  if (hasSaveAvailable) {
+    saveDlBtn.style.display = 'inline-block';
+    saveDlBtn.title = 'Télécharger : ' + (sessionSaveName || pendingSaveName || p.saveName || '');
+  } else if (hasSaveFlag) {
+    // Save connue mais pas en mémoire — montrer le bouton grisé avec info
+    saveDlBtn.style.display = 'inline-block';
+    saveDlBtn.style.opacity = '0.45';
+    saveDlBtn.title = 'Importe ton JSON pour accéder à la save EA';
+  } else {
+    saveDlBtn.style.display = 'none';
+    saveDlBtn.style.opacity = '1';
+  }
 }
 
 function switchProfile(id) {
   currentProfileId = id;
   localStorage.setItem('sims4_active_profile', id);
+  // Vider la session save de l'ancien profil
+  sessionSaveData = null; sessionSaveName = null;
+  pendingSaveData = null; pendingSaveName = null;
   updateProfileDisplay();
   loadData();
   renderAll();
@@ -799,14 +818,20 @@ function openModal(mode) {
     // Afficher save attachée si présente
     const zone = document.getElementById('save-attach-zone');
     const fname = document.getElementById('save-file-name');
-    const storedSave = localStorage.getItem('sims4_save_' + currentProfileId);
-    const hasSaveAnywhere = storedSave || p.saveData || p.hasSave;
-    if (hasSaveAnywhere) {
-      zone.textContent = '✓ Save attachée — clique pour changer';
+    const hasSaveMemory = !!(sessionSaveData || pendingSaveData);
+    const hasSaveKnown = !!(p.hasSave || p.saveName);
+    if (hasSaveMemory) {
+      zone.textContent = '✓ ' + (sessionSaveName || pendingSaveName || p.saveName) + ' — chargée en mémoire';
       zone.classList.add('has-file');
-      fname.textContent = p.saveName || '';
+      fname.textContent = 'Disponible pour téléchargement et export';
+    } else if (hasSaveKnown) {
+      zone.textContent = '⚠️ Save connue (' + (p.saveName || '') + ') mais non disponible — importe ton JSON';
+      zone.classList.add('has-file');
+      zone.style.borderColor = 'rgba(255,180,100,0.4)';
+      zone.style.color = '#ffb494';
+      fname.textContent = 'Clique pour attacher une nouvelle save';
     } else {
-      zone.textContent = 'Clique pour attacher ton fichier .save EA (optionnel)';
+      zone.textContent = '📁 Attacher mon fichier .save EA (optionnel)';
       zone.classList.remove('has-file');
       fname.textContent = '';
     }
@@ -844,6 +869,10 @@ function closeModal() {
 
 let pendingSaveData = null;
 let pendingSaveName = null;
+let pendingSaveMo = null;
+// saveEA en session courante (chargé depuis import JSON)
+let sessionSaveData = null;
+let sessionSaveName = null;
 
 function attachSave() {
   const input = document.createElement('input');
@@ -878,21 +907,19 @@ function downloadSave() {
   const p = profiles[currentProfileId];
   if (!p) return;
 
-  // Chercher d'abord dans la clé séparée (stockage local)
-  let saveData = null, saveName = p.saveName || 'ma_sim.save';
-  const stored = localStorage.getItem('sims4_save_' + currentProfileId);
-  if (stored) {
-    try { const s = JSON.parse(stored); saveData = s.data; saveName = s.name || saveName; } catch(e) {}
-  }
-  // Sinon chercher dans le profil lui-même (vient d'un import JSON)
-  if (!saveData && p.saveData) { saveData = p.saveData; }
+  // Priorité : session courante (import JSON) > pendingSaveData (attaché cette session)
+  let saveData = sessionSaveData || pendingSaveData || null;
+  let saveName = sessionSaveName || pendingSaveName || p.saveName || 'ma_sim.save';
 
-  if (!saveData) { showToast('⚠️ Aucune save trouvée'); return; }
+  if (!saveData) {
+    showToast('⚠️ Save non disponible — importe ton JSON pour y accéder');
+    return;
+  }
   const a = document.createElement('a');
   a.href = saveData;
   a.download = saveName;
   a.click();
-  showToast('⬇️ Save téléchargée !');
+  showToast('⬇️ ' + saveName + ' téléchargée !');
 }
 
 function saveProfile() {
@@ -917,20 +944,12 @@ function saveProfile() {
     localStorage.setItem('sims4_active_profile', newId);
   }
 
-  // Stocker la save dans une clé séparée pour ne pas faire exploser le profil
+  // Save EA : juste noter le nom dans le profil (la data reste en mémoire pendingSaveData)
   if (pendingSaveData) {
-    try {
-      localStorage.setItem('sims4_save_' + currentProfileId, JSON.stringify({data: pendingSaveData, name: pendingSaveName}));
-      profiles[currentProfileId].hasSave = true;
-      profiles[currentProfileId].saveName = pendingSaveName;
-      delete profiles[currentProfileId].saveData; // plus dans le profil
-    } catch(err) {
-      // localStorage plein — on garde quand même le nom pour info
-      profiles[currentProfileId].saveName = pendingSaveName;
-      showToast('⚠️ Save trop grande pour le stockage local — exporte le JSON pour la conserver');
-    }
+    profiles[currentProfileId].saveName = pendingSaveName;
+    profiles[currentProfileId].hasSave = true; // flag : une save a été attachée cette session
   }
-  pendingSaveData = null; pendingSaveName = null;
+  // pendingSaveData reste en mémoire pour l'export — ne pas le nullifier ici
   saveProfiles(profiles);
   renderProfileSelect();
   updateProfileDisplay();
@@ -1540,19 +1559,13 @@ function exportData() {
 
   // Construire l'objet profil à exporter — inclure la save depuis la clé séparée si dispo
   const profileExport = Object.assign({}, p);
-  const storedSave = localStorage.getItem('sims4_save_' + currentProfileId);
   let hasSaveInExport = false;
-  if (storedSave) {
-    try {
-      const s = JSON.parse(storedSave);
-      profileExport.saveData = s.data;
-      profileExport.saveName = s.name;
-      hasSaveInExport = true;
-    } catch(e) {}
-  } else if (p && p.saveData) {
-    hasSaveInExport = true; // déjà dans le profil (venu d'un import)
+  // Priorité : session (import) > pendingSave (attaché cette session)
+  if (sessionSaveData) {
+    profileExport.saveData = sessionSaveData;
+    profileExport.saveName = sessionSaveName;
+    hasSaveInExport = true;
   } else if (pendingSaveData) {
-    // Save en mémoire (trop grande pour localStorage mais pas encore exportée)
     profileExport.saveData = pendingSaveData;
     profileExport.saveName = pendingSaveName;
     hasSaveInExport = true;
@@ -1588,26 +1601,15 @@ function importData() {
           const importedProfile = parsed.profile;
 
           // Toujours mettre à jour le profil (pour avoir les dernières données)
-          // Extraire la save avant de stocker le profil
+          // Extraire la save dans la mémoire session (pas localStorage — trop limité)
           let hasSave = false;
           if (importedProfile.saveData) {
             hasSave = true;
-            try {
-              localStorage.setItem('sims4_save_' + importedProfile.id, JSON.stringify({
-                data: importedProfile.saveData,
-                name: importedProfile.saveName || 'ma_sim.save'
-              }));
-              importedProfile.hasSave = true;
-              importedProfile.saveName = importedProfile.saveName || 'ma_sim.save';
-            } catch(err) {
-              // Save trop grande pour localStorage — la garder dans le profil en mémoire seulement
-              // Elle sera quand même disponible pour le téléchargement dans cette session
-            }
-            // NE PAS supprimer saveData du profil si localStorage a échoué
-            // mais le supprimer si bien stocké séparément
-            if (localStorage.getItem('sims4_save_' + importedProfile.id)) {
-              delete importedProfile.saveData; // libérer de la mémoire du profil stocké
-            }
+            sessionSaveData = importedProfile.saveData;
+            sessionSaveName = importedProfile.saveName || 'ma_sim.save';
+            importedProfile.hasSave = true;
+            importedProfile.saveName = sessionSaveName;
+            delete importedProfile.saveData; // ne pas stocker dans localStorage
           }
 
           profiles[importedProfile.id] = importedProfile;
