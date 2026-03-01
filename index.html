@@ -767,7 +767,9 @@ function updateProfileDisplay() {
 
   // Bouton télécharger save EA
   const saveDlBtn = document.getElementById('save-dl-btn');
-  saveDlBtn.style.display = p.saveData ? 'inline-block' : 'none';
+  const hasSaveLocal = !!localStorage.getItem('sims4_save_' + currentProfileId);
+  const hasSaveInProfile = !!(p.hasSave || p.saveData || p.saveName);
+  saveDlBtn.style.display = (hasSaveLocal || hasSaveInProfile) ? 'inline-block' : 'none';
 }
 
 function switchProfile(id) {
@@ -797,7 +799,9 @@ function openModal(mode) {
     // Afficher save attachée si présente
     const zone = document.getElementById('save-attach-zone');
     const fname = document.getElementById('save-file-name');
-    if (p.saveData) {
+    const storedSave = localStorage.getItem('sims4_save_' + currentProfileId);
+    const hasSaveAnywhere = storedSave || p.saveData || p.hasSave;
+    if (hasSaveAnywhere) {
       zone.textContent = '✓ Save attachée — clique pour changer';
       zone.classList.add('has-file');
       fname.textContent = p.saveName || '';
@@ -846,14 +850,23 @@ function attachSave() {
   input.type = 'file'; input.accept = '.save,.sav';
   input.onchange = e => {
     const file = e.target.files[0]; if (!file) return;
+    const sizeMo = (file.size / 1024 / 1024).toFixed(1);
+    const zone = document.getElementById('save-attach-zone');
+    const fname = document.getElementById('save-file-name');
+    if (file.size > 4 * 1024 * 1024) {
+      // Trop grande pour localStorage — stocker seulement le nom, garder en mémoire pour l'export immédiat
+      zone.textContent = '⚠️ ' + file.name + ' (' + sizeMo + ' Mo) — trop grand pour localStorage, sera inclus dans l\'export JSON de cette session';
+      zone.classList.add('has-file');
+      fname.textContent = 'Exporte ton JSON maintenant pour inclure la save';
+    } else {
+      zone.textContent = '✓ ' + file.name + ' (' + sizeMo + ' Mo) — prête à être sauvegardée';
+      zone.classList.add('has-file');
+      fname.textContent = '';
+    }
     const reader = new FileReader();
     reader.onload = ev => {
-      pendingSaveData = ev.target.result; // base64
+      pendingSaveData = ev.target.result;
       pendingSaveName = file.name;
-      const zone = document.getElementById('save-attach-zone');
-      zone.textContent = '✓ ' + file.name + ' — prête à être sauvegardée';
-      zone.classList.add('has-file');
-      document.getElementById('save-file-name').textContent = Math.round(file.size/1024) + ' Ko';
     };
     reader.readAsDataURL(file);
   };
@@ -863,10 +876,21 @@ function attachSave() {
 function downloadSave() {
   const profiles = getProfiles();
   const p = profiles[currentProfileId];
-  if (!p || !p.saveData) return;
+  if (!p) return;
+
+  // Chercher d'abord dans la clé séparée (stockage local)
+  let saveData = null, saveName = p.saveName || 'ma_sim.save';
+  const stored = localStorage.getItem('sims4_save_' + currentProfileId);
+  if (stored) {
+    try { const s = JSON.parse(stored); saveData = s.data; saveName = s.name || saveName; } catch(e) {}
+  }
+  // Sinon chercher dans le profil lui-même (vient d'un import JSON)
+  if (!saveData && p.saveData) { saveData = p.saveData; }
+
+  if (!saveData) { showToast('⚠️ Aucune save trouvée'); return; }
   const a = document.createElement('a');
-  a.href = p.saveData;
-  a.download = p.saveName || 'ma_sim.save';
+  a.href = saveData;
+  a.download = saveName;
   a.click();
   showToast('⬇️ Save téléchargée !');
 }
@@ -884,21 +908,27 @@ function saveProfile() {
     situation: document.getElementById('modal-situation').value,
     color: selectedColor,
   };
-  if (pendingSaveData) { extraFields.saveData = pendingSaveData; extraFields.saveName = pendingSaveName; }
-
   if (editMode) {
     Object.assign(profiles[currentProfileId], {name}, extraFields);
-    // Garder la save existante si aucune nouvelle
-    if (!pendingSaveData && profiles[currentProfileId].saveData) {
-      extraFields.saveData = profiles[currentProfileId].saveData;
-      extraFields.saveName = profiles[currentProfileId].saveName;
-      Object.assign(profiles[currentProfileId], extraFields);
-    }
   } else {
     const newId = 'sim_' + Date.now();
     profiles[newId] = { id: newId, name, ...extraFields, createdAt: Date.now() };
     currentProfileId = newId;
     localStorage.setItem('sims4_active_profile', newId);
+  }
+
+  // Stocker la save dans une clé séparée pour ne pas faire exploser le profil
+  if (pendingSaveData) {
+    try {
+      localStorage.setItem('sims4_save_' + currentProfileId, JSON.stringify({data: pendingSaveData, name: pendingSaveName}));
+      profiles[currentProfileId].hasSave = true;
+      profiles[currentProfileId].saveName = pendingSaveName;
+      delete profiles[currentProfileId].saveData; // plus dans le profil
+    } catch(err) {
+      // localStorage plein — on garde quand même le nom pour info
+      profiles[currentProfileId].saveName = pendingSaveName;
+      showToast('⚠️ Save trop grande pour le stockage local — exporte le JSON pour la conserver');
+    }
   }
   pendingSaveData = null; pendingSaveName = null;
   saveProfiles(profiles);
@@ -1507,8 +1537,29 @@ function saveData() {
 function exportData() {
   const profiles = getProfiles();
   const p = profiles[currentProfileId];
+
+  // Construire l'objet profil à exporter — inclure la save depuis la clé séparée si dispo
+  const profileExport = Object.assign({}, p);
+  const storedSave = localStorage.getItem('sims4_save_' + currentProfileId);
+  let hasSaveInExport = false;
+  if (storedSave) {
+    try {
+      const s = JSON.parse(storedSave);
+      profileExport.saveData = s.data;
+      profileExport.saveName = s.name;
+      hasSaveInExport = true;
+    } catch(e) {}
+  } else if (p && p.saveData) {
+    hasSaveInExport = true; // déjà dans le profil (venu d'un import)
+  } else if (pendingSaveData) {
+    // Save en mémoire (trop grande pour localStorage mais pas encore exportée)
+    profileExport.saveData = pendingSaveData;
+    profileExport.saveName = pendingSaveName;
+    hasSaveInExport = true;
+  }
+
   const exportObj = {
-    profile: p,
+    profile: profileExport,
     progression: state,
     exportedAt: new Date().toISOString(),
     version: 2
@@ -1518,7 +1569,7 @@ function exportData() {
   a.href = URL.createObjectURL(blob);
   a.download = `sims4_${p ? p.name.replace(/\s/g,'_') : 'progression'}_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
-  if (p && p.saveData) showToast('✓ Export complet — save EA incluse !');
+  if (hasSaveInExport) showToast('✓ Export complet — save EA incluse !');
   else showToast('✓ Export réussi !');
 }
 
@@ -1537,10 +1588,31 @@ function importData() {
           const importedProfile = parsed.profile;
 
           // Toujours mettre à jour le profil (pour avoir les dernières données)
+          // Extraire la save avant de stocker le profil
+          let hasSave = false;
+          if (importedProfile.saveData) {
+            hasSave = true;
+            try {
+              localStorage.setItem('sims4_save_' + importedProfile.id, JSON.stringify({
+                data: importedProfile.saveData,
+                name: importedProfile.saveName || 'ma_sim.save'
+              }));
+              importedProfile.hasSave = true;
+              importedProfile.saveName = importedProfile.saveName || 'ma_sim.save';
+            } catch(err) {
+              // Save trop grande pour localStorage — la garder dans le profil en mémoire seulement
+              // Elle sera quand même disponible pour le téléchargement dans cette session
+            }
+            // NE PAS supprimer saveData du profil si localStorage a échoué
+            // mais le supprimer si bien stocké séparément
+            if (localStorage.getItem('sims4_save_' + importedProfile.id)) {
+              delete importedProfile.saveData; // libérer de la mémoire du profil stocké
+            }
+          }
+
           profiles[importedProfile.id] = importedProfile;
           saveProfiles(profiles);
 
-          // Charger ce profil comme actif
           currentProfileId = importedProfile.id;
           localStorage.setItem('sims4_active_profile', currentProfileId);
           state = parsed.progression;
@@ -1548,8 +1620,8 @@ function importData() {
           renderProfileSelect();
           updateProfileDisplay();
           renderAll();
-          const hasSave = importedProfile.saveData ? ' (+ Save EA disponible ⬇️)' : '';
-          showToast('✓ "' + importedProfile.name + '" importé' + hasSave + '!');
+          const saveTxt = hasSave ? ' (+ Save EA disponible ⬇️)' : '';
+          showToast('✓ "' + importedProfile.name + '" importé' + saveTxt + '!');
 
         } else {
           // Ancien format (progression seule) — on l'importe dans le profil actif
